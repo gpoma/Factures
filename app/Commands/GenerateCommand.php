@@ -73,6 +73,9 @@ class GenerateCommand extends Command
                 }
                 $temps_total[$tache] += floatval(str_replace(',', '.', $temps_ligne));
             }
+
+            $template = IOFactory::load(config('factures.template'));
+
         }
     }
 
