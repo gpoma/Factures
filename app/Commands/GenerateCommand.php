@@ -108,7 +108,46 @@ class GenerateCommand extends Command
             $worksheet->getCell('B11')->setValue(config('factures.societe.cp'));
             $email = $worksheet->getCell('B12')->getValue();
             $worksheet->getCell('B12')->setValue(
-                str_replace('%%societe_email%%', config('factures.societe.contact'), $email)
+                str_replace('%%societe_email%%', config('factures.societe.contact'), $worksheet->getCell('B12')->getValue())
+            );
+
+            $worksheet->getCell('E7')->setValue(config('clients.client.aurouze.name'));
+            $worksheet->getCell('E8')->setValue(config('clients.client.aurouze.adresse'));
+            $worksheet->getCell('E9')->setValue(config('clients.client.aurouze.cp'));
+            $worksheet->getCell('E10')->setValue(
+                str_replace('%%client_siret%%', config('clients.client.aurouze.siret'), $worksheet->getCell('E10')->getValue())
+            );
+
+            $worksheet->getCell('B14')->setValue(
+                str_replace('%%siren%%', config('factures.societe.administratif.siren'), $worksheet->getCell('B14')->getValue())
+            );
+            $worksheet->getCell('B15')->setValue(
+                str_replace('%%immatriculation%%', config('factures.societe.administratif.immatriculation'), $worksheet->getCell('B15')->getValue())
+            );
+            $worksheet->getCell('B16')->setValue(
+                str_replace('%%tva%%', config('factures.societe.administratif.tva'), $worksheet->getCell('B16')->getValue())
+            );
+            $worksheet->getCell('B17')->setValue(
+                str_replace('%%naf%%', config('factures.societe.administratif.naf'), $worksheet->getCell('B17')->getValue())
+            );
+
+            $worksheet->getCell('E19')->setValue(
+                str_replace('%%date_long%%', date('d l Y'), $worksheet->getCell('E19')->getValue())
+            );
+
+            $worksheet->getCell('B21')->setValue(
+                str_replace('%%facture%%', $no_facture, $worksheet->getCell('B21')->getValue())
+            );
+
+            $worksheet->getCell('B33')->setValue(config('factures.societe.reglement.texte'));
+            $worksheet->getCell('B35')->setValue(
+                str_replace('%%rib%%', config('factures.societe.reglement.rib'), $worksheet->getCell('B35')->getValue())
+            );
+            $worksheet->getCell('B36')->setValue(
+                str_replace('%%iban%%', config('factures.societe.reglement.iban'), $worksheet->getCell('B36')->getValue())
+            );
+            $worksheet->getCell('B37')->setValue(
+                str_replace('%%bic%%', config('factures.societe.reglement.bic'), $worksheet->getCell('B37')->getValue())
             );
 
             $output_writer = IOFactory::createWriter($template, 'Ods');
