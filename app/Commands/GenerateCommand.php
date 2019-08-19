@@ -58,7 +58,7 @@ class GenerateCommand extends Command
                 continue;
             }
 
-            if (in_array(basename($file, '.csv'), config('blacklist.files'))) {
+            if (in_array(basename($file, '.csv'), config('factures.blacklist'))) {
                 continue;
             }
 
