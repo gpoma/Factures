@@ -17,6 +17,20 @@ class GenerateCommand extends Command
     protected $tmp = __DIR__.'/../../tmp';
 
     /**
+     * Le template de création de numéro de facture
+     *
+     * @var string
+     */
+    protected $placeholder_numero = '%d';
+
+    /**
+     * Le template de création de numéro de facture
+     *
+     * @var string
+     */
+    protected $placeholder_file = '%s_Facture24eme_%s';
+
+    /**
      * The signature of the command.
      *
      * @var string
@@ -53,21 +67,24 @@ class GenerateCommand extends Command
         }
 
         foreach ($files as $file) {
+            $client = basename($file, '.csv');
             if (! file_exists($file)) {
-                $this->error(basename($file, '.csv') . ' does not exists');
+                $this->error($client . ' does not exists');
                 continue;
             }
 
-            if (in_array(basename($file, '.csv'), config('factures.blacklist'))) {
+            if (in_array($client, config('factures.blacklist'))) {
                 continue;
             }
 
-            $reader = Reader::createFromPath($file, 'r');
-            $reader->setHeaderOffset(0);
-            $reader->setDelimiter(';');
+            $no_facture = date('Ymd').str_pad('XXX', 5, 0, STR_PAD_LEFT);
+
+            $input_reader = Reader::createFromPath($file, 'r');
+            $input_reader->setHeaderOffset(0);
+            $input_reader->setDelimiter(';');
 
             $temps_total = [];
-            foreach ($reader->fetchPairs(4, 3) as $tache => $temps_ligne) {
+            foreach ($input_reader->fetchPairs(4, 3) as $tache => $temps_ligne) {
                 if (! array_key_exists($tache, $temps_total)) {
                     $temps_total[$tache] = 0;
                 }
@@ -75,7 +92,19 @@ class GenerateCommand extends Command
             }
 
             $template = IOFactory::load(config('factures.template'));
+            $template->getDefaultStyle()->getFont()->setName('Liberation Sans');
+            $template->getDefaultStyle()->getFont()->setSize(8);
+            $worksheet = $template->getActiveSheet();
 
+            $cell_date = $worksheet->getCell('E1');
+            $date_value = $cell_date->getValue();
+            $cell_date->setValue(str_replace('%%date_court%%', date('d/m/Y'), $date_value));
+
+            $output_writer = IOFactory::createWriter($template, 'Ods');
+            $output_writer->save('/tmp/'.sprintf($this->placeholder_file, $no_facture, $client).'.ods');
+
+            $template->disconnectWorksheets();
+            unset($template);
         }
     }
 
