@@ -6,6 +6,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use LaravelZero\Framework\Commands\Command;
 use League\Csv\Reader;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Templater;
 
 class GenerateCommand extends Command
 {
@@ -51,7 +52,7 @@ class GenerateCommand extends Command
      *
      * @return mixed
      */
-    public function handle()
+    public function handle(Templater $templater)
     {
         $files = [];
         $periode = $this->argument('periode');
@@ -91,69 +92,37 @@ class GenerateCommand extends Command
                 $temps_total[$tache] += floatval(str_replace(',', '.', $temps_ligne));
             }
 
-            $template = IOFactory::load(config('factures.template'));
-            $template->getDefaultStyle()->getFont()->setName('Liberation Sans');
-            $template->getDefaultStyle()->getFont()->setSize(8);
+            $templater->setCellValue('E1', '%%date_court%%', date('d/m/Y'));
+            $templater->setCellValue('B7', '%%societe%%', config('factures.societe.name'));
+            $templater->setCellValue('B8', '%%societe_statut%%', config('factures.societe.statut'));
+            $templater->setCellValue('B9', '%%societe_statut2%%', config('factures.societe.statut2'));
+            $templater->setCellValue('B10', '%%societe_adresse%%', config('factures.societe.adresse'));
+            $templater->setCellValue('B11', '%%societe_cp%%', config('factures.societe.cp'));
+            $templater->setCellValue('B12', '%%societe_email%%', config('factures.societe.contact'));
 
-            $worksheet = $template->getActiveSheet();
+            $templater->setCellValue('E7', '%%client%%', config('clients.client.'.$client.'.name'));
+            $templater->setCellValue('E8', '%%client_adresse%%', config('clients.client.'.$client.'.adresse'));
+            $templater->setCellValue('E9', '%%client_cp%%', config('clients.client.'.$client.'.cp'));
+            $templater->setCellValue('E10', '%%client_siret%%', config('clients.client.'.$client.'.siret'));
 
-            $cell_date = $worksheet->getCell('E1');
-            $date_value = $cell_date->getValue();
-            $cell_date->setValue(str_replace('%%date_court%%', date('d/m/Y'), $date_value));
+            $templater->setCellValue('B14', '%%siren%%', config('factures.societe.administratif.siren'));
+            $templater->setCellValue('B15', '%%immatriculation%%', config('factures.societe.administratif.immatriculation'));
+            $templater->setCellValue('B16', '%%tva%%', config('factures.societe.administratif.tva'));
+            $templater->setCellValue('B17', '%%naf%%', config('factures.societe.administratif.naf'));
 
-            $worksheet->getCell('B7')->setValue(config('factures.societe.name'));
-            $worksheet->getCell('B8')->setValue(config('factures.societe.statut'));
-            $worksheet->getCell('B9')->setValue(config('factures.societe.statut2'));
-            $worksheet->getCell('B10')->setValue(config('factures.societe.adresse'));
-            $worksheet->getCell('B11')->setValue(config('factures.societe.cp'));
-            $email = $worksheet->getCell('B12')->getValue();
-            $worksheet->getCell('B12')->setValue(
-                str_replace('%%societe_email%%', config('factures.societe.contact'), $worksheet->getCell('B12')->getValue())
-            );
+            $templater->setCellValue('E19', '%%date_long%%', date('d l Y'));
 
-            $worksheet->getCell('E7')->setValue(config('clients.client.aurouze.name'));
-            $worksheet->getCell('E8')->setValue(config('clients.client.aurouze.adresse'));
-            $worksheet->getCell('E9')->setValue(config('clients.client.aurouze.cp'));
-            $worksheet->getCell('E10')->setValue(
-                str_replace('%%client_siret%%', config('clients.client.aurouze.siret'), $worksheet->getCell('E10')->getValue())
-            );
+            $templater->setCellValue('B21', '%%facture%%', $no_facture);
 
-            $worksheet->getCell('B14')->setValue(
-                str_replace('%%siren%%', config('factures.societe.administratif.siren'), $worksheet->getCell('B14')->getValue())
-            );
-            $worksheet->getCell('B15')->setValue(
-                str_replace('%%immatriculation%%', config('factures.societe.administratif.immatriculation'), $worksheet->getCell('B15')->getValue())
-            );
-            $worksheet->getCell('B16')->setValue(
-                str_replace('%%tva%%', config('factures.societe.administratif.tva'), $worksheet->getCell('B16')->getValue())
-            );
-            $worksheet->getCell('B17')->setValue(
-                str_replace('%%naf%%', config('factures.societe.administratif.naf'), $worksheet->getCell('B17')->getValue())
-            );
+            $templater->setCellValue('B33', '%%reglement%%', config('factures.societe.reglement.texte'));
+            $templater->setCellValue('B35', '%%rib%%', config('factures.societe.reglement.rib'));
+            $templater->setCellValue('B36', '%%iban%%', config('factures.societe.reglement.iban'));
+            $templater->setCellValue('B37', '%%bic%%', config('factures.societe.reglement.bic'));
 
-            $worksheet->getCell('E19')->setValue(
-                str_replace('%%date_long%%', date('d l Y'), $worksheet->getCell('E19')->getValue())
-            );
-
-            $worksheet->getCell('B21')->setValue(
-                str_replace('%%facture%%', $no_facture, $worksheet->getCell('B21')->getValue())
-            );
-
-            $worksheet->getCell('B33')->setValue(config('factures.societe.reglement.texte'));
-            $worksheet->getCell('B35')->setValue(
-                str_replace('%%rib%%', config('factures.societe.reglement.rib'), $worksheet->getCell('B35')->getValue())
-            );
-            $worksheet->getCell('B36')->setValue(
-                str_replace('%%iban%%', config('factures.societe.reglement.iban'), $worksheet->getCell('B36')->getValue())
-            );
-            $worksheet->getCell('B37')->setValue(
-                str_replace('%%bic%%', config('factures.societe.reglement.bic'), $worksheet->getCell('B37')->getValue())
-            );
-
-            $output_writer = IOFactory::createWriter($template, 'Ods');
+            $output_writer = IOFactory::createWriter($templater->getTemplate(), 'Ods');
             $output_writer->save('/tmp/'.sprintf($this->placeholder_file, $no_facture, $client).'.ods');
 
-            $template->disconnectWorksheets();
+            $templater->disconnectWorksheets();
             unset($template);
         }
     }
