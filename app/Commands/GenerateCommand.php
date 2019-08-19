@@ -94,11 +94,22 @@ class GenerateCommand extends Command
             $template = IOFactory::load(config('factures.template'));
             $template->getDefaultStyle()->getFont()->setName('Liberation Sans');
             $template->getDefaultStyle()->getFont()->setSize(8);
+
             $worksheet = $template->getActiveSheet();
 
             $cell_date = $worksheet->getCell('E1');
             $date_value = $cell_date->getValue();
             $cell_date->setValue(str_replace('%%date_court%%', date('d/m/Y'), $date_value));
+
+            $worksheet->getCell('B7')->setValue(config('factures.societe.name'));
+            $worksheet->getCell('B8')->setValue(config('factures.societe.statut'));
+            $worksheet->getCell('B9')->setValue(config('factures.societe.statut2'));
+            $worksheet->getCell('B10')->setValue(config('factures.societe.adresse'));
+            $worksheet->getCell('B11')->setValue(config('factures.societe.cp'));
+            $email = $worksheet->getCell('B12')->getValue();
+            $worksheet->getCell('B12')->setValue(
+                str_replace('%%societe_email%%', config('factures.societe.contact'), $email)
+            );
 
             $output_writer = IOFactory::createWriter($template, 'Ods');
             $output_writer->save('/tmp/'.sprintf($this->placeholder_file, $no_facture, $client).'.ods');
