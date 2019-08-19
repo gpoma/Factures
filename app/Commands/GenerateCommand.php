@@ -58,7 +58,21 @@ class GenerateCommand extends Command
                 continue;
             }
 
+            if (in_array(basename($file, '.csv'), config('blacklist.files'))) {
+                continue;
+            }
+
             $reader = Reader::createFromPath($file, 'r');
+            $reader->setHeaderOffset(0);
+            $reader->setDelimiter(';');
+
+            $temps_total = [];
+            foreach ($reader->fetchPairs(4, 3) as $tache => $temps_ligne) {
+                if (! array_key_exists($tache, $temps_total)) {
+                    $temps_total[$tache] = 0;
+                }
+                $temps_total[$tache] += floatval(str_replace(',', '.', $temps_ligne));
+            }
         }
     }
 
